@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okie Morph and Reptiles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .sidebar-item-active { background-color: #1a4d2e; border-left: 4px solid #4ade80; }
+        body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-emerald-600 p-2 rounded-xl text-white font-bold text-lg">
+                <i class="fa-solid fa-staff-snake"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm text-emerald-400">OKIE MORPH</h1>
+                <p class="text-[10px] text-slate-400">& REPTILES</p>
+            </div>
+        </div>
+        <button onclick="openModal('modal-add-animal')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+            + Add Reptile
+        </button>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="flex bg-slate-900 border-b border-slate-800 text-xs">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="sidebar-item-active flex-1 py-3 text-center text-slate-200 font-medium">Dashboard</button>
+        <button onclick="switchTab('inventory')" id="nav-inventory" class="flex-1 py-3 text-center text-slate-400 font-medium">Reptiles</button>
+        <button onclick="switchTab('care')" id="nav-care" class="flex-1 py-3 text-center text-slate-400 font-medium">Care Logs</button>
+        <button onclick="switchTab('breeding')" id="nav-breeding" class="flex-1 py-3 text-center text-slate-400 font-medium">Clutches</button>
+    </nav>
+
+    <!-- MAIN APP BODY -->
+    <main class="flex-1 overflow-y-auto p-4 bg-slate-950 pb-20">
+
+        <!-- DASHBOARD TAB -->
+        <section id="tab-dashboard" class="space-y-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-[10px] font-bold uppercase">Total Animals</span>
+                    <p id="stat-total-animals" class="text-2xl font-extrabold text-slate-100 mt-1">0</p>
+                </div>
+                <div class="bg-slate-900 p-3 rounded-xl border border-slate-800">
+                    <span class="text-slate-400 text-[10px] font-bold uppercase">Est. Value</span>
+                    <p id="stat-total-value" class="text-2xl font-extrabold text-slate-100 mt-1">$0</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-3">
+                <h3 class="font-bold text-sm text-slate-200">Quick Feed & Care Log</h3>
+                <form id="form-quick-log" onsubmit="handleQuickLog(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">Select Animal</label>
+                        <select id="quick-log-animal" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                            <option value="">Choose animal...</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Type</label>
+                            <select id="quick-log-type" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                                <option value="Feeding">Feeding (Ate)</option>
+                                <option value="Refused">Refused Meal</option>
+                                <option value="Weight">Weight Update</option>
+                                <option value="Shed">Shedding</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Details</label>
+                            <input type="text" id="quick-log-detail" placeholder="e.g. Rat, 150g" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-xs text-slate-200">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold">Save Log</button>
+                </form>
+            </div>
+
+            <div class="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2">
+                <h3 class="font-bold text-sm text-slate-200">Recent Logs</h3>
+                <div id="recent-logs-list" class="space-y-2 text-xs text-slate-300">
+                    <p class="text-slate-500 italic">No logs yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- REPTILES TAB -->
+        <section id="tab-inventory" class="hidden space-y-3">
+            <input type="text" id="inventory-search" oninput="renderInventory()" placeholder="Search Name, ID, Morph..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 text-xs text-slate-200">
+            <div id="inventory-grid" class="grid grid-cols-1 gap-3"></div>
+        </section>
+
+        <!-- CARE LOGS TAB -->
+        <section id="tab-care" class="hidden space-y-3">
+            <div class="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden text-xs">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-800/60 text-slate-400 border-b border-slate-800">
+                        <tr>
+                            <th class="p-2.5">Date</th>
+                            <th class="p-2.5">Animal</th>
+                            <th class="p-2.5">Type</th>
+                            <th class="p-2.5">Detail</th>
+                        </tr>
+                    </thead>
+                    <tbody id="care-logs-table" class="divide-y divide-slate-800 text-slate-300">
+                        <tr><td colspan="4" class="p-3 text-center text-slate-500 italic">No care records yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- CLUTCHES TAB -->
+        <section id="tab-breeding" class="hidden space-y-3">
+            <button onclick="openModal('modal-add-clutch')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold">+ Record Clutch</button>
+            <div id="clutch-grid" class="grid grid-cols-1 gap-3"></div>
+        </section>
+    </main>
+
+    <!-- MODAL: ADD REPTILE -->
+    <div id="modal-add-animal" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-slate-100 text-sm">Add New Reptile</h3>
+                <button onclick="closeModal('modal-add-animal')" class="text-slate-400 font-bold">✕</button>
+            </div>
+            <form id="form-add-animal" onsubmit="handleAddAnimal(event)" class="space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">ID Tag *</label>
+                        <input type="text" id="add-id" required placeholder="BP-01" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Name</label>
+                        <input type="text" id="add-name" placeholder="Loki" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Species *</label>
+                        <input type="text" id="add-species" required placeholder="Ball Python" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Morph *</label>
+                        <input type="text" id="add-morph" required placeholder="Pastel" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Sex</label>
+                        <select id="add-sex" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                            <option value="Male">Male ♂</option>
+                            <option value="Female">Female ♀</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Status</label>
+                        <select id="add-status" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                            <option value="Available">Available</option>
+                            <option value="Breeder">Breeder</option>
+                            <option value="Holdback">Holdback</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Price ($)</label>
+                        <input type="number" id="add-price" placeholder="0" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-animal')" class="px-3 py-1.5 text-slate-400">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg font-bold">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD CLUTCH -->
+    <div id="modal-add-clutch" class="fixed inset-0 bg-black/80 flex items-center justify-center hidden p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-4 space-y-3 text-xs">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                <h3 class="font-bold text-slate-100 text-sm">Add Clutch</h3>
+                <button onclick="closeModal('modal-add-clutch')" class="text-slate-400 font-bold">✕</button>
+            </div>
+            <form id="form-add-clutch" onsubmit="handleAddClutch(event)" class="space-y-3">
+                <div>
+                    <label class="block text-slate-400 mb-1">Clutch ID</label>
+                    <input type="text" id="clutch-id" required placeholder="Clutch #2026-A" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Sire ID</label>
+                        <input type="text" id="clutch-sire" required placeholder="Father ID" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Dam ID</label>
+                        <input type="text" id="clutch-dam" required placeholder="Mother ID" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Lay Date</label>
+                        <input type="date" id="clutch-date" required class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Egg Count</label>
+                        <input type="number" id="clutch-eggs" required placeholder="6" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-slate-800">
+                    <button type="button" onclick="closeModal('modal-add-clutch')" class="px-3 py-1.5 text-slate-400">Cancel</button>
+                    <button type="submit" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg font-bold">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- APP SCRIPT -->
+    <script>
+        const sampleData = [
+            { id: "BP-01", name: "Loki", species: "Ball Python", morph: "Pastel Sunset 100% Het Piebald", sex: "Male", status: "Breeder", price: 1200, photo: "https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=500&auto=format&fit=crop&q=60" },
+            { id: "BP-02", name: "Cleo", species: "Ball Python", morph: "Banana Clown", sex: "Female", status: "Available", price: 850, photo: "https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=500&auto=format&fit=crop&q=60" }
+        ];
+
+        let appData = JSON.parse(localStorage.getItem('okie_morph_data')) || {
+            animals: sampleData,
+            careLogs: [],
+            clutches: []
+        };
+
+        function saveData() {
+            localStorage.setItem('okie_morph_data', JSON.stringify(appData));
+            refreshUI();
+        }
+
+        function switchTab(tabName) {
+            ['dashboard', 'inventory', 'care', 'breeding'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                document.getElementById(`nav-${t}`).classList.remove('sidebar-item-active');
+            });
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+            document.getElementById(`nav-${tabName}`).classList.add('sidebar-item-active');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function handleAddAnimal(e) {
+            e.preventDefault();
+            const animal = {
+                id: document.getElementById('add-id').value,
+                name: document.getElementById('add-name').value || 'Unassigned',
+                species: document.getElementById('add-species').value,
+                morph: document.getElementById('add-morph').value,
+                sex: document.getElementById('add-sex').value,
+                status: document.getElementById('add-status').value,
+                price: parseFloat(document.getElementById('add-price').value) || 0,
+                photo: 'https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=500&auto=format&fit=crop&q=60'
+            };
+            appData.animals.push(animal);
+            saveData();
+            closeModal('modal-add-animal');
+            e.target.reset();
+        }
+
+        function handleQuickLog(e) {
+            e.preventDefault();
+            const log = {
+                animalId: document.getElementById('quick-log-animal').value,
+                type: document.getElementById('quick-log-type').value,
+                detail: document.getElementById('quick-log-detail').value,
+                date: new Date().toLocaleDateString()
+            };
+            appData.careLogs.unshift(log);
+            saveData();
+            e.target.reset();
+        }
+
+        function handleAddClutch(e) {
+            e.preventDefault();
+            const clutch = {
+                id: document.getElementById('clutch-id').value,
+                sire: document.getElementById('clutch-sire').value,
+                dam: document.getElementById('clutch-dam').value,
+                date: document.getElementById('clutch-date').value,
+                eggs: document.getElementById('clutch-eggs').value
+            };
+            appData.clutches.push(clutch);
+            saveData();
+            closeModal('modal-add-clutch');
+            e.target.reset();
+        }
+
+        function refreshUI() {
+            document.getElementById('stat-total-animals').innerText = appData.animals.length;
+            const totalVal = appData.animals.reduce((acc, a) => acc + (a.price || 0), 0);
+            document.getElementById('stat-total-value').innerText = `$${totalVal.toLocaleString()}`;
+
+            const selectEl = document.getElementById('quick-log-animal');
+            selectEl.innerHTML = '<option value="">Choose animal...</option>';
+            appData.animals.forEach(a => {
+                selectEl.innerHTML += `<option value="${a.id}">${a.id} - ${a.name}</option>`;
+            });
+
+            const logList = document.getElementById('recent-logs-list');
+            if (appData.careLogs.length === 0) {
+                logList.innerHTML = `<p class="text-slate-500 italic">No logs yet.</p>`;
+            } else {
+                logList.innerHTML = appData.careLogs.slice(0, 5).map(l => `
+                    <div class="bg-slate-800 p-2 rounded border border-slate-700 flex justify-between">
+                        <div><span class="font-bold text-emerald-400">${l.animalId}</span>: ${l.type} - ${l.detail}</div>
+                        <span class="text-[10px] text-slate-500">${l.date}</span>
+                    </div>
+                `).join('');
+            }
+
+            renderInventory();
+            renderCareLogs();
+            renderClutches();
+        }
+
+        function renderInventory() {
+            const grid = document.getElementById('inventory-grid');
+            const search = document.getElementById('inventory-search').value.toLowerCase();
+
+            const filtered = appData.animals.filter(a => 
+                a.id.toLowerCase().includes(search) || a.morph.toLowerCase().includes(search) || a.name.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<p class="text-center text-slate-500 py-4 text-xs">No reptiles found.</p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(a => `
+                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden p-3 flex space-x-3 items-center">
+                    <img src="${a.photo}" class="w-16 h-16 rounded-lg object-cover" alt="Photo">
+                    <div class="flex-1 space-y-1">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-emerald-400">${a.id} - ${a.name}</span>
+                            <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-300">${a.status}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">${a.species} • ${a.morph}</p>
+                        <p class="text-[10px] text-slate-500">Sex: ${a.sex} | Price: $${a.price}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderCareLogs() {
+            const table = document.getElementById('care-logs-table');
+            if (appData.careLogs.length === 0) {
+                table.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-slate-500 italic">No care records yet.</td></tr>`;
+                return;
+            }
+            table.innerHTML = appData.careLogs.map(l => `
+                <tr>
+                    <td class="p-2.5 text-slate-400">${l.date}</td>
+                    <td class="p-2.5 font-bold text-emerald-400">${l.animalId}</td>
+                    <td class="p-2.5">${l.type}</td>
+                    <td class="p-2.5 text-slate-300">${l.detail}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderClutches() {
+            const grid = document.getElementById('clutch-grid');
+            if (appData.clutches.length === 0) {
+                grid.innerHTML = `<p class="text-slate-500 italic text-xs">No clutches recorded.</p>`;
+                return;
+            }
+            grid.innerHTML = appData.clutches.map(c => `
+                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl space-y-1 text-xs">
+                    <div class="flex justify-between font-bold text-amber-400">
+                        <span>${c.id}</span>
+                        <span>${c.eggs} Eggs</span>
+                    </div>
+                    <p class="text-slate-400">Sire: ${c.sire} | Dam: ${c.dam}</p>
+                    <p class="text-slate-500 text-[10px]">Lay Date: ${c.date}</p>
+                </div>
+            `).join('');
+        }
+
+        refreshUI();
+    </script>
+</body>
+</html>
